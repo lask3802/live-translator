@@ -1,0 +1,129 @@
+# ====================================
+# Live Translator - .gitignore
+# ====================================
+
+# ====================================
+# Dependencies
+# ====================================
+node_modules/
+.pnp
+.pnp.js
+
+# ====================================
+# Build Outputs
+# ====================================
+dist/
+build/
+*.zip
+
+# ====================================
+# Python
+# ====================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+.eggs/
+*.egg-info/
+*.egg
+.installed.cfg
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Poetry
+poetry.lock
+
+# ====================================
+# IDE & Editors
+# ====================================
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+*.sublime-workspace
+*.sublime-project
+
+# ====================================
+# OS Generated
+# ====================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ====================================
+# Environment & Secrets
+# ====================================
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+*.pem
+secrets.json
+
+# ====================================
+# Logs
+# ====================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ====================================
+# Testing
+# ====================================
+coverage/
+.nyc_output/
+.pytest_cache/
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+
+# ====================================
+# AI/ML Models (Large Files)
+# ====================================
+*.onnx
+*.bin
+*.pt
+*.pth
+models/
+!models/.gitkeep
+
+# ====================================
+# Chrome Extension Development
+# ====================================
+*.crx
+*.pem
+web-ext-artifacts/
+
+# ====================================
+# Temporary Files
+# ====================================
+*.tmp
+*.temp
+.cache/
+.temp/
+tmp/
+temp/
+
+# ====================================
+# Project Specific
+# ====================================
+.agent/

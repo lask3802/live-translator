@@ -1,0 +1,14 @@
+[tool.poetry]
+name = "live-translator-server"
+version = "0.1.0"
+description = ""
+authors = []
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = "^0.100.0"
+uvicorn = "^0.23.0"
+faster-whisper = "^0.7.0"
+silero-vad = "^4.0.0"
+numpy = "^1.26.0"
+websockets = "^11.0"
