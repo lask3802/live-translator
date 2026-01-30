@@ -4,11 +4,29 @@ import { Mic, MicOff, Settings, RefreshCw } from "lucide-react";
 import "../index.css";
 
 interface TranscriptSegment {
+    segment_id: number;
     text: string;
     start: number;
     end: number;
     duration_ms?: number;
+    translation?: string;
 }
+
+const LANGUAGE_OPTIONS = [
+    { value: "auto", label: "Auto" },
+    { value: "en", label: "English" },
+    { value: "ja", label: "Japanese" },
+    { value: "zh", label: "Chinese" },
+    { value: "ko", label: "Korean" },
+];
+
+const TARGET_LANGUAGE_OPTIONS = [
+    { value: "en", label: "English" },
+    { value: "ja", label: "Japanese" },
+    { value: "zh-Hant", label: "Chinese (Traditional)" },
+    { value: "zh-Hans", label: "Chinese (Simplified)" },
+    { value: "ko", label: "Korean" },
+];
 
 function App() {
     const [isRecording, setIsRecording] = useState(false);
@@ -16,6 +34,9 @@ function App() {
     const [transcripts, setTranscripts] = useState<TranscriptSegment[]>([]);
     const [activeTab, setActiveTab] = useState<chrome.tabs.Tab | null>(null);
     const [pendingStreamId, setPendingStreamId] = useState<string | null>(null);
+    const [language, setLanguage] = useState("auto");
+    const [targetLanguage, setTargetLanguage] = useState("zh-Hant");
+    const [extraContext, setExtraContext] = useState("");
     const bottomRef = useRef<HTMLDivElement>(null);
 
     // Request cached streamId when SidePanel opens
@@ -113,13 +134,80 @@ function App() {
         bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [transcripts]);
 
+    useEffect(() => {
+        const saved = localStorage.getItem("lt_extra_context");
+        if (saved) {
+            setExtraContext(saved);
+        }
+    }, []);
+
+    useEffect(() => {
+        chrome.runtime.sendMessage({ type: "SET_LANGUAGE", language });
+    }, [language]);
+
+    useEffect(() => {
+        chrome.runtime.sendMessage({ type: "SET_TARGET_LANGUAGE", language: targetLanguage });
+    }, [targetLanguage]);
+
+    useEffect(() => {
+        localStorage.setItem("lt_extra_context", extraContext);
+        chrome.runtime.sendMessage({ type: "SET_EXTRA_CONTEXT", text: extraContext });
+    }, [extraContext]);
+
     // Listen for server messages relayed from offscreen via chrome.runtime
     useEffect(() => {
         const messageListener = (message: any) => {
             if (message.type === "SERVER_MESSAGE") {
                 const data = message.payload;
                 if (data.type === "transcript") {
-                    setTranscripts(prev => [...prev, data]);
+                    setTranscripts(prev => {
+                        const existing = prev.find(item => item.segment_id === data.segment_id);
+                        if (existing) {
+                            return prev.map(item =>
+                                item.segment_id === data.segment_id
+                                    ? { ...item, ...data }
+                                    : item
+                            );
+                        }
+                        return [...prev, data];
+                    });
+                } else if (data.type === "transcript_corrected") {
+                    setTranscripts(prev => {
+                        const existing = prev.find(item => item.segment_id === data.segment_id);
+                        if (existing) {
+                            return prev.map(item =>
+                                item.segment_id === data.segment_id
+                                    ? { ...item, text: data.text }
+                                    : item
+                            );
+                        }
+                        return [...prev, {
+                            segment_id: data.segment_id,
+                            text: data.text,
+                            start: data.start,
+                            end: data.end,
+                            duration_ms: data.duration_ms,
+                        }];
+                    });
+                } else if (data.type === "translation") {
+                    setTranscripts(prev => {
+                        const existing = prev.find(item => item.segment_id === data.segment_id);
+                        if (existing) {
+                            return prev.map(item =>
+                                item.segment_id === data.segment_id
+                                    ? { ...item, translation: data.text }
+                                    : item
+                            );
+                        }
+                        return [...prev, {
+                            segment_id: data.segment_id,
+                            text: data.source_text || "",
+                            start: data.start,
+                            end: data.end,
+                            duration_ms: data.duration_ms,
+                            translation: data.text,
+                        }];
+                    });
                 } else if (data.type === "vad_start") {
                     setStatus("Listening...");
                 } else if (data.type === "vad_commit") {
@@ -132,6 +220,10 @@ function App() {
                 if (isRecording) {
                     setStatus("Server disconnected");
                 }
+            } else if (message.type === "SERVER_ERROR") {
+                console.log("Server error:", message.message);
+                setStatus(message.message || "Server connection error");
+                setIsRecording(false);
             }
         };
 
@@ -199,6 +291,30 @@ function App() {
             <header className="flex justify-between items-center mb-2 border-b border-gray-700 pb-2">
                 <h1 className="text-lg font-bold">Live Translator</h1>
                 <div className="flex gap-1">
+                    <select
+                        value={language}
+                        onChange={(e) => setLanguage(e.target.value)}
+                        className="bg-gray-800 text-xs text-gray-200 px-2 py-1 rounded border border-gray-700"
+                        title="Language"
+                    >
+                        {LANGUAGE_OPTIONS.map(option => (
+                            <option key={option.value} value={option.value}>
+                                {option.label}
+                            </option>
+                        ))}
+                    </select>
+                    <select
+                        value={targetLanguage}
+                        onChange={(e) => setTargetLanguage(e.target.value)}
+                        className="bg-gray-800 text-xs text-gray-200 px-2 py-1 rounded border border-gray-700"
+                        title="Target language"
+                    >
+                        {TARGET_LANGUAGE_OPTIONS.map(option => (
+                            <option key={option.value} value={option.value}>
+                                {option.label}
+                            </option>
+                        ))}
+                    </select>
                     <button
                         onClick={handleRefresh}
                         className="p-2 hover:bg-gray-800 rounded transition-colors"
@@ -225,6 +341,17 @@ function App() {
                 )}
             </div>
 
+            <div className="mb-2">
+                <label className="block text-xs text-gray-400 mb-1">Extra context (sent to server)</label>
+                <textarea
+                    value={extraContext}
+                    onChange={(e) => setExtraContext(e.target.value)}
+                    rows={3}
+                    className="w-full bg-gray-800 text-sm text-gray-100 rounded border border-gray-700 p-2 resize-none"
+                    placeholder="Add context for better translation (e.g., speaker, domain terms)"
+                />
+            </div>
+
             <div className="flex-1 overflow-y-auto space-y-4 pr-2">
                 {transcripts.length === 0 && (
                     <div className="text-gray-500 text-center mt-10">
@@ -234,9 +361,14 @@ function App() {
                     </div>
                 )}
 
-                {transcripts.map((t, i) => (
+                {transcripts
+                    .sort((a, b) => a.segment_id - b.segment_id)
+                    .map((t, i) => (
                     <div key={i} className="bg-gray-800 p-3 rounded-lg animate-in fade-in slide-in-from-bottom-2">
                         <p className="text-gray-100">{t.text}</p>
+                        {t.translation && (
+                            <p className="text-gray-300 mt-1">{t.translation}</p>
+                        )}
                         <span className="text-xs text-gray-500 mt-1 block">
                             {t.start.toFixed(1)}s - {t.end.toFixed(1)}s
                         </span>

@@ -211,6 +211,8 @@ npm run build
 npx tsc --noEmit
 ```
 
+Note: When loading the extension in Chrome, select the built folder at apps/extension/dist (not apps/extension). Chrome only accepts JavaScript files in the manifest; the build output contains the compiled scripts.
+
 ### Server Development
 
 ```bash

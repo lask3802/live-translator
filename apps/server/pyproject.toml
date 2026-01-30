@@ -4,11 +4,28 @@ version = "0.1.0"
 description = ""
 authors = []
 
+[[tool.poetry.packages]]
+include = "api"
+
+[[tool.poetry.packages]]
+include = "core"
+
+[project]
+name = "live-translator-server"
+version = "0.1.0"
+requires-python = ">=3.10,<3.14"
+
 [tool.poetry.dependencies]
-python = "^3.10"
+python = ">=3.10,<3.14"
 fastapi = "^0.100.0"
 uvicorn = "^0.23.0"
-faster-whisper = "^0.7.0"
-silero-vad = "^4.0.0"
+faster-whisper = ">=1.0.0"
+silero-vad = ">=5.0.1b2"
 numpy = "^1.26.0"
 websockets = "^11.0"
+openai = "^1.59.0"
+python-dotenv = "^1.0.1"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

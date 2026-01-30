@@ -17,6 +17,7 @@ export default defineConfig({
         },
     },
     build: {
+        assetsInlineLimit: 0,
         rollupOptions: {
             input: {
                 sidepanel: resolve(__dirname, "src/sidepanel/index.html"),

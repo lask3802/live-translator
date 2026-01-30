@@ -5,6 +5,9 @@ let offscreenReady = false;
 let cachedStreamId: string | null = null;
 let cachedTabId: number | null = null;
 let cachedAt = 0;
+let currentLanguage = "auto";
+let currentTargetLanguage = "zh-Hant";
+let currentExtraContext = "";
 const STREAM_CACHE_TTL_MS = 60_000; // 1 minute
 
 // CRITICAL: We MUST disable auto-open to handle the click ourselves.
@@ -90,6 +93,39 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         offscreenReady = true;
         return true;
     }
+    if (message.type === "SET_LANGUAGE") {
+        currentLanguage = message.language || "auto";
+        console.log("Language updated:", currentLanguage);
+        if (offscreenReady) {
+            chrome.runtime.sendMessage({
+                type: "SET_LANGUAGE",
+                data: { language: currentLanguage }
+            });
+        }
+        return true;
+    }
+    if (message.type === "SET_TARGET_LANGUAGE") {
+        currentTargetLanguage = message.language || "zh";
+        console.log("Target language updated:", currentTargetLanguage);
+        if (offscreenReady) {
+            chrome.runtime.sendMessage({
+                type: "SET_TARGET_LANGUAGE",
+                data: { targetLanguage: currentTargetLanguage }
+            });
+        }
+        return true;
+    }
+    if (message.type === "SET_EXTRA_CONTEXT") {
+        currentExtraContext = message.text || "";
+        console.log("Extra context updated:", currentExtraContext ? "(set)" : "(empty)");
+        if (offscreenReady) {
+            chrome.runtime.sendMessage({
+                type: "SET_EXTRA_CONTEXT",
+                data: { extraContext: currentExtraContext }
+            });
+        }
+        return true;
+    }
     return true;
 });
 
@@ -124,7 +160,12 @@ async function startRecording(streamId: string): Promise<{ success: boolean; err
         console.log("Sending INIT_AUDIO_CAPTURE to offscreen...");
         await chrome.runtime.sendMessage({
             type: "INIT_AUDIO_CAPTURE",
-            data: { streamId }
+            data: {
+                streamId,
+                language: currentLanguage,
+                targetLanguage: currentTargetLanguage,
+                extraContext: currentExtraContext,
+            }
         });
 
         isRecording = true;
