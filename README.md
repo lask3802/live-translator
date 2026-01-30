@@ -13,6 +13,13 @@
 
 [Features](#-features) • [Installation](#-installation) • [Quick Start](#-quick-start) • [Architecture](#-architecture) • [Contributing](#-contributing)
 
+---
+
+> [!WARNING]
+> **🚧 Work In Progress 🚧**
+> 
+> This project is currently under active development and is not yet ready for production use. Features may be incomplete, APIs may change, and bugs are expected. Contributions and feedback are welcome!
+
 </div>
 
 ---
